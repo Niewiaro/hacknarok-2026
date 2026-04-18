@@ -1,26 +1,30 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/led_strip.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/console/console.h>
 #include <zephyr/random/random.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #define STRIP_NODE DT_ALIAS(led_strip)
 #define STRIP_NUM_LEDS 21
 #define NUM_CLOUDS 19
-#define SUN_START_IDX 19 /* Diody nr 19 i 20 to słońce */
+#define SUN_START_IDX 19
+
+static const struct pwm_dt_spec sun_servo = PWM_DT_SPEC_GET(DT_ALIAS(sun_servo));
 
 static struct led_rgb pixels[STRIP_NUM_LEDS];
 static uint8_t cloud_map[NUM_CLOUDS] = {0};
 
-/* --- Globalne Zmienne Środowiskowe (0 - 100%) --- */
 volatile int sun_power = 100;
 volatile int storm_intensity = 0;
+volatile int target_servo_pos = 50; // Nowa zmienna dla serwa (0-100%)
 
-/* * -------------------------------------------------------------------
- * WĄTEK: SILNIK RENDERUJĄCY NIEBO
- * -------------------------------------------------------------------
- */
+#define SERVO_PERIOD_NS PWM_MSEC(20)
+#define SERVO_MIN_PULSE_NS 600000U   /* 0.6 ms */
+#define SERVO_MAX_PULSE_NS 2400000U  /* 2.4 ms */
+
 void weather_led_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
@@ -109,36 +113,55 @@ void weather_led_thread(void *p1, void *p2, void *p3)
 
 K_THREAD_DEFINE(weather_thread, 2048, weather_led_thread, NULL, NULL, NULL, 5, 0, 0);
 
-/* * -------------------------------------------------------------------
- * MAIN: INTERFEJS KONTROLNY (UART)
- * -------------------------------------------------------------------
- */
-int main(void)
+void servo_control_thread(void *p1, void *p2, void *p3)
 {
-	console_init();
-	printf("\n\n--- System Pogodowy nRF54L15 Gotowy ---\n");
-	printf("Sterowanie (Wpisz i zatwierdz):\n");
-	printf("[W] Slonce +10%%  |  [S] Slonce -10%%\n");
-	printf("[E] Burza +10%%   |  [D] Burza -10%%\n");
+	if (!pwm_is_ready_dt(&sun_servo)) {
+		printf("[SERVO] PWM device not ready\n");
+		return;
+	}
+
+	printf("[SERVO] PWM ready: period=%u ns, channel=%u\n",
+		(unsigned int)sun_servo.period, sun_servo.channel);
 
 	while (1)
 	{
-		uint8_t c = console_getchar();
+		/* Obliczamy puls: 1ms (0%) do 2ms (100%) */
+		uint32_t pulse_ns = SERVO_MIN_PULSE_NS +
+			((uint32_t)target_servo_pos * (SERVO_MAX_PULSE_NS - SERVO_MIN_PULSE_NS)) / 100U;
 
-		if (c == 'w' || c == 'W')
-			sun_power = (sun_power <= 90) ? sun_power + 10 : 100;
-		if (c == 's' || c == 'S')
-			sun_power = (sun_power >= 10) ? sun_power - 10 : 0;
-
-		if (c == 'e' || c == 'E')
-			storm_intensity = (storm_intensity <= 90) ? storm_intensity + 10 : 100;
-		if (c == 'd' || c == 'D')
-			storm_intensity = (storm_intensity >= 10) ? storm_intensity - 10 : 0;
-
-		if (c == 'w' || c == 'W' || c == 's' || c == 'S' || c == 'e' || c == 'E' || c == 'd' || c == 'D')
-		{
-			printf(" -> AKTUALIZACJA: Slonce = %d%%, Burza = %d%%\n", sun_power, storm_intensity);
+		int ret = pwm_set_dt(&sun_servo, SERVO_PERIOD_NS, pulse_ns);
+		if (ret != 0) {
+			printf("[SERVO] pwm_set_dt failed: %d (period=%u, pulse=%u)\n",
+				ret, (unsigned int)SERVO_PERIOD_NS, (unsigned int)pulse_ns);
 		}
+
+		// Serwo nie musi być aktualizowane 30 razy na sekundę.
+		// 100ms (10Hz) wystarczy dla płynnego ruchu i oszczędza procesor.
+		k_msleep(100);
 	}
-	return 0;
+}
+K_THREAD_DEFINE(servo_tid, 1024, servo_control_thread, NULL, NULL, NULL, 6, 0, 0);
+
+int main(void) {
+    console_init();
+	printf("System gotowy. Sterowanie: [W/S] Sun, [E/D] Storm, [R/F] Servo Pos\n");
+
+    while (1) {
+        uint8_t c = console_getchar();
+		c = (uint8_t)tolower(c);
+        
+        if (c == 'w') sun_power = MIN(sun_power + 10, 100);
+        if (c == 's') sun_power = MAX(sun_power - 10, 0);
+        
+        if (c == 'e') storm_intensity = MIN(storm_intensity + 10, 100);
+        if (c == 'd') storm_intensity = MAX(storm_intensity - 10, 0);
+
+        // Nowe sterowanie dedykowaną zmienną dla serwa
+        if (c == 'r') target_servo_pos = MIN(target_servo_pos + 10, 100);
+        if (c == 'f') target_servo_pos = MAX(target_servo_pos - 10, 0);
+
+        printf("Stan: Sun %d%%, Storm %d%%, Servo %d%%\n", 
+                sun_power, storm_intensity, target_servo_pos);
+    }
+    return 0;
 }
