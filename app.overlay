@@ -15,8 +15,9 @@
 
     pwm21_default: pwm21_default {
         group1 {
-            psels = <NRF_PSEL(PWM_OUT0, 1, 12)>,
-                    <NRF_PSEL(PWM_OUT1, 1, 13)>;
+            psels = <NRF_PSEL(PWM_OUT0, 1, 14)>,
+                    <NRF_PSEL(PWM_OUT1, 1, 13)>,
+                    <NRF_PSEL(PWM_OUT2, 1, 12)>;
         };
     };
 };
@@ -75,6 +76,9 @@
         rope_servo: rope_servo {
             pwms = <&pwm21 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
         };
+        shed_servo: shed_servo {
+            pwms = <&pwm21 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+        };
     };
 
     aliases {
@@ -82,5 +86,6 @@
         led-strip-ground = &led_strip_ground;
         laundry-servo = &laundry_servo;
         rope-servo = &rope_servo;
+        shed-servo = &shed_servo;
     };
 };

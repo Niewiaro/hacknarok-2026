@@ -20,6 +20,7 @@
 
 static const struct pwm_dt_spec laundry_servo = PWM_DT_SPEC_GET(DT_ALIAS(laundry_servo));
 static const struct pwm_dt_spec rope_servo = PWM_DT_SPEC_GET(DT_ALIAS(rope_servo));
+static const struct pwm_dt_spec shed_servo = PWM_DT_SPEC_GET(DT_ALIAS(shed_servo));
 
 static struct led_rgb pixels[STRIP_NUM_LEDS];
 static struct led_rgb ground_pixels[GROUND_STRIP_NUM_LEDS];
@@ -30,8 +31,9 @@ volatile int sun_power = 255;
 volatile int storm_intensity = 0;
 volatile int path_light_intensity = 255;
 
-volatile bool laundry_open = false;
+volatile bool laundry_open = true;
 volatile bool pull_rope = true;
+volatile bool shed_close = false;
 
 #define SERVO_PERIOD_NS PWM_MSEC(20)
 #define SERVO_MIN_PULSE_NS 600000U	/* 0.6 ms */
@@ -44,8 +46,7 @@ void weather_led_thread(void *p1, void *p2, void *p3)
 	while (1)
 	{
 		/* 1. OBLICZANIE SŁOŃCA (Im większa burza, tym słońce słabsze) */
-		/* Wewnętrznie liczymy też wartości procentowe do istniejącej logiki burzy. */
-		int sun_pct = (sun_power * 100) / 255;
+		/* Wewnętrznie liczymy wartości procentowe do istniejącej logiki burzy. */
 		int storm_pct = (storm_intensity * 100) / 255;
 
 		/* Wzór: Moc słońca * (255 - siła burzy) / 255 */
@@ -221,6 +222,29 @@ void laundry_servo_thread(void *p1, void *p2, void *p3)
 }
 K_THREAD_DEFINE(laundry_tid, 1024, laundry_servo_thread, NULL, NULL, NULL, 6, 0, 0);
 
+void shed_servo_thread(void *p1, void *p2, void *p3)
+{
+	if (!pwm_is_ready_dt(&shed_servo))
+		return;
+
+	bool last_state = !shed_close;
+
+	while (1)
+	{
+		if (shed_close != last_state)
+		{
+			uint32_t pos = shed_close ? 0 : 32;
+			uint32_t pulse = SERVO_MIN_PULSE_NS + (pos * (SERVO_MAX_PULSE_NS - SERVO_MIN_PULSE_NS)) / 100U;
+			pwm_set_pulse_dt(&shed_servo, pulse);
+
+			last_state = shed_close;
+		}
+
+		k_msleep(100);
+	}
+}
+K_THREAD_DEFINE(shed_tid, 1024, shed_servo_thread, NULL, NULL, NULL, 6, 0, 0);
+
 #define ROPE_FPS_MS 20
 #define ROPE_MIN_POS 40		// Prędkość max w dół (Rozwijanie)
 #define ROPE_NEUTRAL_POS 50 // Zatrzymanie silnika
@@ -313,7 +337,7 @@ K_THREAD_DEFINE(rope_tid, 1024, rope_servo_thread, NULL, NULL, NULL, 4, 0, 0);
 int main(void)
 {
 	console_init();
-	printf("Sterowanie: [W/S] Sun, [E/D] Storm, [A/Q] Path, [Z] Loundry, [X] Pull Rope\n");
+	printf("Sterowanie: [W/S] Sun, [E/D] Storm, [A/Q] Path, [Z] Loundry, [X] Pull Rope, [C] Shed\n");
 
 	while (1)
 	{
@@ -337,13 +361,16 @@ int main(void)
 			laundry_open = !laundry_open;
 		if (c == 'x')
 			pull_rope = !pull_rope;
+		if (c == 'c')
+			shed_close = !shed_close;
 
-		if (strchr("wsedaqzx", c) != NULL)
+		if (strchr("wsedaqzxc", c) != NULL)
 		{
-			printf("Stan: Sun:%d, Storm:%d, Path:%d, Lndry:%s, Rope:%s\n",
+			printf("Stan: Sun:%d, Storm:%d, Path:%d, Lndry:%s, Rope:%s, Shed:%s\n",
 				   sun_power, storm_intensity, path_light_intensity,
 				   laundry_open ? "OPEN" : "CLOSED",
-				   pull_rope ? "PULLING" : "RELEASED");
+				   pull_rope ? "PULLING" : "RELEASED",
+				   shed_close ? "CLOSED" : "OPEN");
 		}
 	}
 	return 0;
