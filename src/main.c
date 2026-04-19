@@ -194,7 +194,7 @@ void ground_led_thread(void *p1, void *p2, void *p3)
 		led_strip_update_rgb(ground_strip, ground_pixels, GROUND_TOTAL_LEDS);
 
 		frame++;
-		k_msleep(30); // 33 FPS dla płynnych fal
+		k_msleep(20);
 	}
 }
 K_THREAD_DEFINE(ground_thread, 2048, ground_led_thread, NULL, NULL, NULL, 5, 0, 0);
@@ -334,43 +334,87 @@ void rope_servo_thread(void *p1, void *p2, void *p3)
 }
 K_THREAD_DEFINE(rope_tid, 1024, rope_servo_thread, NULL, NULL, NULL, 4, 0, 0);
 
+// int main(void)
+// {
+// 	console_init();
+// 	printf("Sterowanie: [W/S] Sun, [E/D] Storm, [A/Q] Path, [Z] Loundry, [X] Pull Rope, [C] Shed\n");
+
+// 	while (1)
+// 	{
+// 		uint8_t c = console_getchar();
+// 		c = (uint8_t)tolower(c);
+
+// 		if (c == 'w')
+// 			sun_power = MIN(sun_power + 10, 255);
+// 		if (c == 's')
+// 			sun_power = MAX(sun_power - 10, 0);
+// 		if (c == 'e')
+// 			storm_intensity = MIN(storm_intensity + 10, 255);
+// 		if (c == 'd')
+// 			storm_intensity = MAX(storm_intensity - 10, 0);
+// 		if (c == 'a')
+// 			path_light_intensity = MIN(path_light_intensity + 10, 255);
+// 		if (c == 'q')
+// 			path_light_intensity = MAX(path_light_intensity - 10, 0);
+
+// 		if (c == 'z')
+// 			laundry_open = !laundry_open;
+// 		if (c == 'x')
+// 			pull_rope = !pull_rope;
+// 		if (c == 'c')
+// 			shed_close = !shed_close;
+
+// 		if (strchr("wsedaqzxc", c) != NULL)
+// 		{
+// 			printf("Stan: Sun:%d, Storm:%d, Path:%d, Lndry:%s, Rope:%s, Shed:%s\n",
+// 				   sun_power, storm_intensity, path_light_intensity,
+// 				   laundry_open ? "OPEN" : "CLOSED",
+// 				   pull_rope ? "PULLING" : "RELEASED",
+// 				   shed_close ? "CLOSED" : "OPEN");
+// 		}
+// 	}
+// 	return 0;
+// }
+
 int main(void)
 {
-	console_init();
-	printf("Sterowanie: [W/S] Sun, [E/D] Storm, [A/Q] Path, [Z] Loundry, [X] Pull Rope, [C] Shed\n");
+	/* Inicjalizacja bufora dla całych linii tekstu */
+	console_getline_init();
+	printf("\n--- Diorama UART Controller Gotowy ---\n");
+	printf("Oczekuje na format: SUN,STORM,PATH,LAUNDRY,ROPE,SHED\n");
 
 	while (1)
 	{
-		uint8_t c = console_getchar();
-		c = (uint8_t)tolower(c);
+		/* Czeka na całą linię tekstu zakończoną Enterem (\n) */
+		char *line = console_getline();
 
-		if (c == 'w')
-			sun_power = MIN(sun_power + 10, 255);
-		if (c == 's')
-			sun_power = MAX(sun_power - 10, 0);
-		if (c == 'e')
-			storm_intensity = MIN(storm_intensity + 10, 255);
-		if (c == 'd')
-			storm_intensity = MAX(storm_intensity - 10, 0);
-		if (c == 'a')
-			path_light_intensity = MIN(path_light_intensity + 10, 255);
-		if (c == 'q')
-			path_light_intensity = MAX(path_light_intensity - 10, 0);
+		/* Zmienne tymczasowe dla parsera */
+		int sun_tmp, storm_tmp, path_tmp, l_val, r_val, s_val;
 
-		if (c == 'z')
-			laundry_open = !laundry_open;
-		if (c == 'x')
-			pull_rope = !pull_rope;
-		if (c == 'c')
-			shed_close = !shed_close;
+		/* Parsowanie formatu: np. "100,50,75,1,0,1" */
+		int parsed = sscanf(line, "%d,%d,%d,%d,%d,%d",
+							&sun_tmp, &storm_tmp, &path_tmp,
+							&l_val, &r_val, &s_val);
 
-		if (strchr("wsedaqzxc", c) != NULL)
+		if (parsed == 6)
 		{
-			printf("Stan: Sun:%d, Storm:%d, Path:%d, Lndry:%s, Rope:%s, Shed:%s\n",
+			/* Zapisujemy do zmiennych globalnych (volatile) */
+			sun_power = sun_tmp;
+			storm_intensity = storm_tmp;
+			path_light_intensity = path_tmp;
+
+			laundry_open = (l_val != 0);
+			pull_rope = (r_val != 0);
+			shed_close = (s_val != 0);
+
+			/* Odsyłamy potwierdzenie do Pythona */
+			printf("ACK: Sun:%d Storm:%d Path:%d Lndry:%d Rope:%d Shed:%d\n",
 				   sun_power, storm_intensity, path_light_intensity,
-				   laundry_open ? "OPEN" : "CLOSED",
-				   pull_rope ? "PULLING" : "RELEASED",
-				   shed_close ? "CLOSED" : "OPEN");
+				   laundry_open, pull_rope, shed_close);
+		}
+		else
+		{
+			printf("BLAD: Niezgodny format danych. Otrzymano: %s\n", line);
 		}
 	}
 	return 0;
