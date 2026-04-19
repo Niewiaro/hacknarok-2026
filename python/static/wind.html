@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ołtarz Wiatru</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-1: #06131f;
+            --sky-2: #0b2030;
+            --accent: #9be7ff;
+            --accent-2: #ffffff;
+            --panel: rgba(6, 16, 24, 0.62);
+        }
+
+        html,
+        body {
+            width: 100%;
+            overflow-x: hidden;
+            overscroll-behavior-x: none;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            touch-action: pan-y;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel Decorative', cursive;
+            color: var(--accent-2);
+            background:
+                radial-gradient(circle at 50% 35%, rgba(155, 231, 255, 0.16) 0%, transparent 30%),
+                radial-gradient(circle at center, var(--sky-2) 0%, var(--sky-1) 100%);
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: absolute;
+            inset: -25%;
+            pointer-events: none;
+            background-repeat: no-repeat;
+            background-size: 22% 100%, 28% 100%, 18% 100%, 24% 100%;
+            opacity: 0.18;
+            filter: blur(1px);
+            animation: drift 14s linear infinite;
+        }
+
+        body::before {
+            background-image:
+                linear-gradient(115deg, transparent 0 46%, rgba(255, 255, 255, 0.18) 48%, transparent 50%),
+                linear-gradient(120deg, transparent 0 42%, rgba(155, 231, 255, 0.16) 45%, transparent 48%),
+                linear-gradient(108deg, transparent 0 44%, rgba(255, 255, 255, 0.14) 46%, transparent 49%),
+                linear-gradient(116deg, transparent 0 45%, rgba(155, 231, 255, 0.12) 47%, transparent 50%);
+        }
+
+        body::after {
+            opacity: 0.12;
+            animation-duration: 22s;
+            animation-direction: reverse;
+            background-image:
+                linear-gradient(100deg, transparent 0 50%, rgba(255, 255, 255, 0.18) 52%, transparent 55%),
+                linear-gradient(112deg, transparent 0 43%, rgba(155, 231, 255, 0.16) 46%, transparent 49%),
+                linear-gradient(106deg, transparent 0 48%, rgba(255, 255, 255, 0.12) 50%, transparent 54%),
+                linear-gradient(118deg, transparent 0 45%, rgba(155, 231, 255, 0.1) 47%, transparent 51%);
+        }
+
+        .shell {
+            position: relative;
+            z-index: 1;
+            width: min(92vw, 520px);
+            text-align: center;
+            box-sizing: border-box;
+            padding: 0 1rem;
+        }
+
+        .rune {
+            font-size: 5rem;
+            line-height: 1;
+            margin-bottom: -6px;
+            color: var(--accent);
+            text-shadow: 0 0 18px rgba(155, 231, 255, 0.85), 0 0 40px rgba(255, 255, 255, 0.28);
+            animation: gust 2.8s ease-in-out infinite alternate;
+            transform-origin: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.6rem, 8vw, 4rem);
+            letter-spacing: 0.34em;
+            text-indent: 0.34em;
+            text-shadow: 0 0 16px rgba(155, 231, 255, 0.42);
+        }
+
+        .status-container {
+            display: inline-block;
+            margin: 1.2rem 0 2.2rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 999px;
+            background: var(--panel);
+            border: 1px solid rgba(155, 231, 255, 0.16);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
+        }
+
+        #status {
+            margin: 0;
+            font-family: sans-serif;
+            font-size: 0.82rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        .slider-container {
+            width: min(100%, 420px);
+            margin: 0 auto;
+        }
+
+        #value-display {
+            font-size: clamp(3.3rem, 11vw, 5rem);
+            font-weight: 700;
+            line-height: 1;
+            color: #f8fdff;
+            text-shadow: 0 0 18px rgba(155, 231, 255, 0.6);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 48px;
+            background: transparent;
+            margin-top: 1rem;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 999px;
+            background:
+                linear-gradient(90deg, rgba(155, 231, 255, 0.18), rgba(255, 255, 255, 0.4), rgba(155, 231, 255, 0.18));
+            border: 1px solid rgba(155, 231, 255, 0.28);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.45);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 38px;
+            height: 38px;
+            margin-top: -15px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.85);
+            background:
+                radial-gradient(circle at 35% 30%, #ffffff 0%, #dff8ff 28%, #9be7ff 62%, #4caad0 100%);
+            box-shadow:
+                0 0 14px rgba(155, 231, 255, 0.9),
+                0 0 30px rgba(255, 255, 255, 0.18);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            border-radius: 999px;
+            background:
+                linear-gradient(90deg, rgba(155, 231, 255, 0.18), rgba(255, 255, 255, 0.4), rgba(155, 231, 255, 0.18));
+            border: 1px solid rgba(155, 231, 255, 0.28);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.45);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.85);
+            background: radial-gradient(circle at 35% 30%, #ffffff 0%, #dff8ff 28%, #9be7ff 62%, #4caad0 100%);
+            box-shadow:
+                0 0 14px rgba(155, 231, 255, 0.9),
+                0 0 30px rgba(255, 255, 255, 0.18);
+            cursor: pointer;
+        }
+
+        .wind-lines {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .wind-lines span {
+            position: absolute;
+            left: -30%;
+            width: 70%;
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), rgba(155, 231, 255, 0.45), transparent);
+            filter: drop-shadow(0 0 8px rgba(155, 231, 255, 0.45));
+            animation: sweep linear infinite;
+        }
+
+        .wind-lines span:nth-child(1) {
+            top: 16%;
+            animation-duration: 8.5s;
+            animation-delay: -1.8s;
+        }
+
+        .wind-lines span:nth-child(2) {
+            top: 34%;
+            animation-duration: 10.5s;
+            animation-delay: -5s;
+            opacity: 0.75;
+        }
+
+        .wind-lines span:nth-child(3) {
+            top: 53%;
+            animation-duration: 7.5s;
+            animation-delay: -2.4s;
+            opacity: 0.55;
+        }
+
+        .wind-lines span:nth-child(4) {
+            top: 71%;
+            animation-duration: 12s;
+            animation-delay: -8s;
+            opacity: 0.68;
+        }
+
+        @keyframes sweep {
+            0% {
+                transform: translateX(0) scaleX(0.65);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.7;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(170%) scaleX(1.15);
+                opacity: 0;
+            }
+        }
+
+        @keyframes gust {
+            0% {
+                transform: translateX(-2px) scale(1);
+                text-shadow: 0 0 18px rgba(155, 231, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.22);
+            }
+
+            100% {
+                transform: translateX(4px) scale(1.04);
+                text-shadow: 0 0 24px rgba(155, 231, 255, 1), 0 0 50px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translateX(-2%) translateY(0);
+            }
+
+            100% {
+                transform: translateX(2%) translateY(-1%);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wind-lines" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="shell">
+        <div class="rune">ᚹ</div>
+        <h1>Wiatr</h1>
+
+        <div class="status-container">
+            <p id="status">Nasłuchiwanie podmuchów...</p>
+        </div>
+
+        <div class="slider-container">
+            <div id="value-display">127</div>
+            <input type="range" id="god-slider" min="0" max="255" value="127">
+        </div>
+    </div>
+
+    <script>
+        const godId = "wind";
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = `${protocol}://${window.location.host}/ws/${godId}`;
+
+        let ws;
+        let currentValue = 127;
+
+        const slider = document.getElementById("god-slider");
+        const display = document.getElementById("value-display");
+        const rune = document.querySelector(".rune");
+
+        function connect() {
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                const status = document.getElementById("status");
+                status.innerText = "Połączono z ołtarzem";
+                status.style.color = "#9be7ff";
+                status.style.textShadow = "0 0 10px rgba(155, 231, 255, 0.5)";
+            };
+
+            ws.onclose = () => {
+                const status = document.getElementById("status");
+                status.innerText = "Podmuch zgasł. Łączę ponownie...";
+                status.style.color = "#ffdfc1";
+                status.style.textShadow = "0 0 10px rgba(255, 255, 255, 0.2)";
+                setTimeout(connect, 2000);
+            };
+        }
+
+        function sendValue() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(String(currentValue));
+                console.log("Wysłano wiatr:", currentValue);
+            }
+        }
+
+        function updateVisuals(val) {
+            currentValue = Number(val);
+            slider.value = String(currentValue);
+            display.innerText = currentValue;
+
+            const intensity = currentValue / 255;
+            const speed = 0.8 + (intensity * 1.8);
+            const blur = 8 + (intensity * 18);
+            const brightness = 0.35 + (intensity * 0.7);
+
+            document.body.style.background = `
+                radial-gradient(circle at 50% 35%, rgba(155, 231, 255, ${0.08 + (intensity * 0.18)}) 0%, transparent 28%),
+                radial-gradient(circle at center, rgba(8, 28, 42, ${brightness}) 0%, #02070d 100%)
+            `;
+
+            rune.style.transform = `scale(${1 + (intensity * 0.22)}) rotate(${(intensity - 0.5) * 8}deg)`;
+            rune.style.textShadow = `0 0 ${12 + blur}px rgba(155, 231, 255, 0.95), 0 0 ${26 + blur}px rgba(255, 255, 255, 0.35)`;
+
+            document.documentElement.style.setProperty("--accent", `rgba(155, 231, 255, ${0.7 + (intensity * 0.3)})`);
+            document.documentElement.style.setProperty("--accent-2", `rgba(255, 255, 255, ${0.85 + (intensity * 0.15)})`);
+            document.documentElement.style.setProperty("--sky-1", `rgba(4, 12, 20, ${0.95 - (intensity * 0.1)})`);
+            document.documentElement.style.setProperty("--sky-2", `rgba(11, 32, 48, ${0.92 - (intensity * 0.08)})`);
+
+            display.style.textShadow = `0 0 ${10 + (intensity * 20)}px rgba(155, 231, 255, 0.6)`;
+
+            sendValue();
+        }
+
+        connect();
+
+        slider.oninput = () => updateVisuals(slider.value);
+
+        setInterval(() => {
+            sendValue();
+        }, 1000);
+
+        updateVisuals(127);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ołtarze Żywiołów</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-1: #05070d;
+            --bg-2: #0d1624;
+            --panel: rgba(10, 16, 26, 0.72);
+            --text: #f8fbff;
+            --muted: rgba(248, 251, 255, 0.72);
+            --border: rgba(255, 255, 255, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            overflow-x: hidden;
+            overscroll-behavior-x: none;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Cinzel Decorative', cursive;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 50% 20%, rgba(155, 231, 255, 0.12) 0%, transparent 28%),
+                radial-gradient(circle at 50% 80%, rgba(255, 216, 106, 0.08) 0%, transparent 24%),
+                linear-gradient(180deg, var(--bg-2), var(--bg-1));
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            touch-action: pan-y;
+            padding: 1.2rem;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            inset: -20%;
+            pointer-events: none;
+            background-repeat: no-repeat;
+            opacity: 0.14;
+            filter: blur(1px);
+            animation: drift 18s linear infinite;
+        }
+
+        body::before {
+            background-image:
+                linear-gradient(115deg, transparent 0 48%, rgba(155, 231, 255, 0.18) 50%, transparent 52%),
+                linear-gradient(112deg, transparent 0 44%, rgba(255, 255, 255, 0.16) 47%, transparent 50%),
+                linear-gradient(120deg, transparent 0 46%, rgba(255, 216, 106, 0.14) 49%, transparent 52%);
+            background-size: 24% 100%, 30% 100%, 20% 100%;
+        }
+
+        body::after {
+            animation-direction: reverse;
+            animation-duration: 26s;
+            opacity: 0.08;
+            background-image:
+                linear-gradient(100deg, transparent 0 50%, rgba(255, 255, 255, 0.14) 53%, transparent 56%),
+                linear-gradient(118deg, transparent 0 47%, rgba(155, 231, 255, 0.14) 50%, transparent 53%);
+            background-size: 28% 100%, 22% 100%;
+        }
+
+        .frame {
+            position: relative;
+            width: min(100%, 980px);
+            padding: clamp(1.2rem, 4vw, 2rem);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            background: linear-gradient(180deg, rgba(16, 22, 35, 0.78), rgba(8, 11, 17, 0.62));
+            backdrop-filter: blur(12px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+            text-align: center;
+        }
+
+        .rune {
+            font-size: clamp(3.5rem, 10vw, 5.5rem);
+            line-height: 1;
+            color: #9be7ff;
+            text-shadow: 0 0 18px rgba(155, 231, 255, 0.9), 0 0 48px rgba(255, 255, 255, 0.18);
+            margin-bottom: 0.4rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 7vw, 4rem);
+            letter-spacing: 0.28em;
+            text-indent: 0.28em;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            margin: 0.8rem auto 0;
+            max-width: 48ch;
+            font-family: sans-serif;
+            font-size: clamp(0.9rem, 2.5vw, 1.02rem);
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin-top: 1.8rem;
+        }
+
+        .card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 220px;
+            padding: 1.2rem;
+            border-radius: 22px;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: 0.5;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.18), transparent 45%);
+            pointer-events: none;
+        }
+
+        .card .icon {
+            font-size: 3.2rem;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .card h2 {
+            margin: 0;
+            font-size: clamp(1.7rem, 4vw, 2.3rem);
+            letter-spacing: 0.18em;
+            text-indent: 0.18em;
+        }
+
+        .card p {
+            margin: 0.8rem 0 0;
+            font-family: sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: var(--muted);
+        }
+
+        .card span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1.2rem;
+            padding: 0.7rem 1rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: sans-serif;
+            font-size: 0.82rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        .sun {
+            color: #ffd86a;
+        }
+
+        .temp {
+            color: #bfefff;
+        }
+
+        .wind {
+            color: #ffffff;
+        }
+
+        .sun .icon,
+        .sun span {
+            text-shadow: 0 0 18px rgba(255, 216, 106, 0.35);
+        }
+
+        .temp .icon,
+        .temp span {
+            text-shadow: 0 0 18px rgba(191, 239, 255, 0.35);
+        }
+
+        .wind .icon,
+        .wind span {
+            text-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translateX(-2%) translateY(0);
+            }
+
+            100% {
+                transform: translateX(2%) translateY(-1%);
+            }
+        }
+
+        @media (max-width: 820px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                min-height: 180px;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="frame">
+        <div class="rune">ᚦ</div>
+        <h1>Ołtarze</h1>
+        <p class="subtitle">Wybierz żywioł i przejdź do jego ołtarza. Każdy ekran steruje osobnym kanałem WebSocket.</p>
+
+        <section class="grid" aria-label="Nawigacja do ołtarzy">
+            <a class="card sun" href="/sun.html">
+                <div>
+                    <div class="icon">☉</div>
+                    <h2>Słońce</h2>
+                    <p>Ognisty rytm, złote tło i pulsująca energia dla kanału sun.</p>
+                </div>
+                <span>Wejdź do środka</span>
+            </a>
+
+            <a class="card temp" href="/temp.html">
+                <div>
+                    <div class="icon">ᚲ</div>
+                    <h2>Temperatura</h2>
+                    <p>Zimno, ciepło i przejście pośrodku. Panel dla kanału temp.</p>
+                </div>
+                <span>Wejdź do środka</span>
+            </a>
+
+            <a class="card wind" href="/wind.html">
+                <div>
+                    <div class="icon">ᚹ</div>
+                    <h2>Wiatr</h2>
+                    <p>Podmuchy, ruch i lekkość. Ołtarz sterujący kanałem wind.</p>
+                </div>
+                <span>Wejdź do środka</span>
+            </a>
+        </section>
+    </main>
+</body>
+
+</html>

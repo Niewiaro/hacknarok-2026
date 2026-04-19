@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ołtarz Temperatury</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-1: #07111d;
+            --sky-2: #11293a;
+            --accent: #bfefff;
+            --accent-2: #ffffff;
+            --panel: rgba(8, 18, 28, 0.64);
+        }
+
+        html,
+        body {
+            width: 100%;
+            overflow-x: hidden;
+            overscroll-behavior-x: none;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            touch-action: pan-y;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cinzel Decorative', cursive;
+            color: var(--accent-2);
+            background:
+                radial-gradient(circle at 50% 35%, rgba(191, 239, 255, 0.14) 0%, transparent 28%),
+                radial-gradient(circle at center, var(--sky-2) 0%, var(--sky-1) 100%);
+            transition: background 0.3s ease;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: absolute;
+            inset: -25%;
+            pointer-events: none;
+            background-repeat: no-repeat;
+            background-size: 22% 100%, 28% 100%, 18% 100%, 24% 100%;
+            opacity: 0.14;
+            filter: blur(1px);
+            animation: drift 14s linear infinite;
+        }
+
+        body::before {
+            background-image:
+                linear-gradient(115deg, transparent 0 46%, rgba(255, 255, 255, 0.16) 48%, transparent 50%),
+                linear-gradient(120deg, transparent 0 42%, rgba(191, 239, 255, 0.16) 45%, transparent 48%),
+                linear-gradient(108deg, transparent 0 44%, rgba(255, 255, 255, 0.1) 46%, transparent 49%),
+                linear-gradient(116deg, transparent 0 45%, rgba(191, 239, 255, 0.12) 47%, transparent 50%);
+        }
+
+        body::after {
+            opacity: 0.1;
+            animation-duration: 22s;
+            animation-direction: reverse;
+            background-image:
+                linear-gradient(100deg, transparent 0 50%, rgba(255, 255, 255, 0.16) 52%, transparent 55%),
+                linear-gradient(112deg, transparent 0 43%, rgba(191, 239, 255, 0.14) 46%, transparent 49%),
+                linear-gradient(106deg, transparent 0 48%, rgba(255, 255, 255, 0.08) 50%, transparent 54%),
+                linear-gradient(118deg, transparent 0 45%, rgba(191, 239, 255, 0.08) 47%, transparent 51%);
+        }
+
+        .shell {
+            position: relative;
+            z-index: 1;
+            width: min(92vw, 520px);
+            text-align: center;
+            box-sizing: border-box;
+            padding: 0 1rem;
+        }
+
+        .rune {
+            font-size: 5rem;
+            line-height: 1;
+            margin-bottom: -6px;
+            color: var(--accent);
+            text-shadow: 0 0 18px rgba(191, 239, 255, 0.85), 0 0 40px rgba(255, 255, 255, 0.22);
+            transition: transform 0.2s ease, text-shadow 0.3s ease;
+            transform-origin: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.6rem, 8vw, 4rem);
+            letter-spacing: 0.34em;
+            width: 100%;
+            text-align: center;
+            text-shadow: 0 0 16px rgba(191, 239, 255, 0.4);
+        }
+
+        .status-container {
+            display: inline-block;
+            margin: 1.2rem 0 2.2rem;
+            padding: 0.7rem 1.2rem;
+            border-radius: 999px;
+            background: var(--panel);
+            border: 1px solid rgba(191, 239, 255, 0.14);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
+        }
+
+        #status {
+            margin: 0;
+            font-family: sans-serif;
+            font-size: 0.82rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.78);
+        }
+
+        .slider-container {
+            width: min(100%, 420px);
+            margin: 0 auto;
+        }
+
+        #value-display {
+            font-size: clamp(3.3rem, 11vw, 5rem);
+            font-weight: 700;
+            line-height: 1;
+            color: #f8fdff;
+            text-shadow: 0 0 18px rgba(191, 239, 255, 0.6);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 48px;
+            background: transparent;
+            margin-top: 1rem;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(191, 239, 255, 0.18), rgba(255, 255, 255, 0.4), rgba(191, 239, 255, 0.18));
+            border: 1px solid rgba(191, 239, 255, 0.28);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.45);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 38px;
+            height: 38px;
+            margin-top: -15px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.85);
+            background: radial-gradient(circle at 35% 30%, #ffffff 0%, #dff8ff 28%, #bfefff 62%, #4caad0 100%);
+            box-shadow: 0 0 14px rgba(191, 239, 255, 0.9), 0 0 30px rgba(255, 255, 255, 0.16);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(191, 239, 255, 0.18), rgba(255, 255, 255, 0.4), rgba(191, 239, 255, 0.18));
+            border: 1px solid rgba(191, 239, 255, 0.28);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.45);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.85);
+            background: radial-gradient(circle at 35% 30%, #ffffff 0%, #dff8ff 28%, #bfefff 62%, #4caad0 100%);
+            box-shadow: 0 0 14px rgba(191, 239, 255, 0.9), 0 0 30px rgba(255, 255, 255, 0.16);
+            cursor: pointer;
+        }
+
+        @keyframes drift {
+            0% {
+                transform: translateX(-2%) translateY(0);
+            }
+
+            100% {
+                transform: translateX(2%) translateY(-1%);
+            }
+        }
+
+        @media (max-width: 480px), (max-height: 700px) {
+            .shell {
+                width: min(94vw, 420px);
+                padding: 0 0.25rem;
+            }
+
+            .rune {
+                font-size: 4rem;
+                margin-bottom: -4px;
+            }
+
+            h1 {
+                font-size: clamp(2rem, 10vw, 2.8rem);
+                letter-spacing: 0.18em;
+            }
+
+            .status-container {
+                margin: 1rem 0 1.6rem;
+                padding: 0.6rem 0.95rem;
+            }
+
+            #status {
+                font-size: 0.72rem;
+                letter-spacing: 0.16em;
+            }
+
+            #value-display {
+                font-size: clamp(2.8rem, 18vw, 4rem);
+            }
+
+            .slider-container {
+                width: 100%;
+            }
+
+            input[type="range"] {
+                margin-top: 0.7rem;
+                height: 42px;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                width: 32px;
+                height: 32px;
+                margin-top: -12px;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 32px;
+                height: 32px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="shell">
+        <div class="rune">ᚲ</div>
+        <h1>Temperatura</h1>
+
+        <div class="status-container">
+            <p id="status">Przywoływanie mrozu...</p>
+        </div>
+
+        <div class="slider-container">
+            <div id="value-display">0</div>
+            <input type="range" id="god-slider" min="0" max="255" value="127">
+        </div>
+    </div>
+
+    <script>
+        const godId = "temp";
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = `${protocol}://${window.location.host}/ws/${godId}`;
+
+        let ws;
+        let currentValue = 127;
+
+        function connect() {
+            ws = new WebSocket(wsUrl);
+            ws.onopen = () => {
+                const s = document.getElementById("status");
+                s.innerText = "Połączono z ołtarzem";
+                s.style.color = "#00ffcc";
+            };
+            ws.onclose = () => {
+                const s = document.getElementById("status");
+                s.innerText = "Ołtarz zamarzł. Czekam...";
+                s.style.color = "#ff4444";
+                setTimeout(connect, 2000);
+            };
+        }
+
+        connect();
+
+        const slider = document.getElementById("god-slider");
+        const display = document.getElementById("value-display");
+        const rune = document.querySelector(".rune");
+
+        function sendValue() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(String(currentValue));
+                console.log("Wysłano temperaturę:", currentValue);
+            }
+        }
+
+        function updateVisuals(val) {
+            currentValue = Number(val);
+            slider.value = String(currentValue);
+            display.innerText = currentValue;
+            const ratio = currentValue / 255;
+
+            // Logika kolorów: Błękit (0) -> Biel (127) -> Czerwień (255)
+            let r, g, b;
+            if (currentValue <= 127) {
+                // Od zimnego do neutralnego
+                const localRatio = currentValue / 127;
+                r = Math.floor(0 + (255 * localRatio));
+                g = Math.floor(100 + (155 * localRatio));
+                b = 255;
+            } else {
+                // Od neutralnego do gorącego
+                const localRatio = (currentValue - 127) / 128;
+                r = 255;
+                g = Math.floor(255 - (200 * localRatio));
+                b = Math.floor(255 - (255 * localRatio));
+            }
+
+            // Tło i blask runy
+            document.body.style.background = `radial-gradient(circle at center, rgb(${Math.round(r / 2)}, ${Math.round(g / 4)}, ${Math.round(b / 2)}) 0%, #000 100%)`;
+            rune.style.color = `rgb(${r}, ${g}, ${b})`;
+            rune.style.textShadow = `0 0 20px rgb(${r}, ${g}, ${b}), 0 0 40px rgba(${r}, ${g}, ${b}, 0.5)`;
+            rune.style.transform = `scale(${1 + (Math.abs(currentValue - 127) / 127 * 0.2)})`;
+
+            sendValue();
+        }
+
+        slider.oninput = () => updateVisuals(slider.value);
+
+        // Wysyłka zapasowa, gdyby zdarzenie input nie dotarło na czas
+        setInterval(() => {
+            sendValue();
+        }, 1000);
+
+        // Inicjalizacja wyglądu przy starcie
+        updateVisuals(127);
+    </script>
+</body>
+
+</html>
